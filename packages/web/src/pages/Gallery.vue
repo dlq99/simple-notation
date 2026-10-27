@@ -123,6 +123,8 @@ interface Song {
   data?: SNTemplate;
   /** 从 public/ 下现成示例加载，避免把整首谱抄进源码 */
   url?: string;
+  /** 扫弦记号（d 下扫 / u 上扫），按拍循环 */
+  strum?: string;
 }
 
 const SONGS: Song[] = [
@@ -161,6 +163,30 @@ const SONGS: Song[] = [
     label: '曾经的你（完整）',
     hint: '许巍 · 前奏 + 主歌，带 F/C/G/Am 和弦的完整谱',
     url: '/score/template/【Simple-Notation】曾经的你.json',
+  },
+  {
+    // 真实尤克编配：来自 mjrainwater/ukulele_chorpro 的 ChordPro 歌本
+    // （0003 - Amazing Grace.onsong，key G / 3-4 / tempo 60）
+    // 弹唱谱只画和弦与扫弦，人声旋律不画；`0` 是"这一拍不弹旋律"的休止。
+    id: 'amazing-grace',
+    label: 'Amazing Grace（弹唱）',
+    hint: '公有领域 · G 调 3/4 · G–C–G–D / G–C–D7–G · 扫弦 d-u-u',
+    strum: 'duu',
+    data: {
+      info: {
+        title: 'Amazing Grace',
+        composer: 'John Newton',
+        lyricist: '',
+        time: '3',
+        tempo: '60',
+        key: 'G',
+        beat: '3',
+        author: '',
+      },
+      score:
+        '{G}0,0,0|{C}0,0,0|{G}0,0,0|{D}0,0,0\n{G}0,0,0|{C}0,0,0|{D7}0,0,0|{G}0,0,0',
+      lyric: '',
+    },
   },
 ];
 
@@ -201,7 +227,11 @@ function options(): SNOptions {
     // infoShow 只跳过标题绘制，信息区仍然占高度；这里把它的高度压成 0
     info: { height: 0, padding: 0 },
     content: { padding: 8, infoShow: false },
-    score: { ...activePreset.value.score, chordType: chordMode.value },
+    score: {
+      ...activePreset.value.score,
+      chordType: chordMode.value,
+      strum: activeSong.value.strum,
+    },
   } as SNOptions;
 }
 
