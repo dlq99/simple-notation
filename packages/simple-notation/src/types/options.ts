@@ -80,6 +80,11 @@ export interface SNScoreOptions {
    * 用于非吉他乐器，例如尤克里里 4 弦。
    */
   chordPositions?: Record<string, (number | null)[]>;
+  /**
+   * 扫弦记号：`d` 下扫 / `u` 上扫，按拍循环，例如 `dduu`。
+   * 留空则不画箭头。
+   */
+  strum?: string;
 }
 
 export enum SNChordType {

@@ -154,6 +154,7 @@ vi.mock('@layers', () => {
     SNChordLayer: vi.fn(() => mockLayerInstance),
     SNPointerLayer: vi.fn(() => mockLayerInstance),
     SNTieLineLayer: vi.fn(() => mockLayerInstance),
+    SNStrumLayer: { draw: vi.fn() },
   };
 });
 

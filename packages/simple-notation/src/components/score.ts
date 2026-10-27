@@ -15,6 +15,7 @@ import {
   SNBeamLayer,
   SNChordLayer,
   SNPointerLayer,
+  SNStrumLayer,
   SNTieLineLayer,
 } from '@layers';
 
@@ -142,6 +143,10 @@ export class SNScore extends SNBox {
       totalY - this.innerY + SNConfig.score.lineSpace + tabLyricExtra,
     );
     SNBeamLayer.draw(this.staves.flatMap((stave) => stave.measures));
+    SNStrumLayer.draw(
+      this.staves.flatMap((stave) => stave.measures),
+      this.el,
+    );
     this.drawBorderBox(SNBoxType.SCORE, SNConfig.debug.borderbox?.score);
   }
 }

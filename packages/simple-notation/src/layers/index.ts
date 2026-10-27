@@ -3,3 +3,4 @@ export * from './tieline';
 export * from './pointer';
 export * from './chord';
 export * from './beam';
+export * from './strum';
