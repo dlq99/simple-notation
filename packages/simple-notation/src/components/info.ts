@@ -37,7 +37,8 @@ export class SNInfo extends SNBox {
       content.innerX,
       content.innerY,
       content.innerWidth,
-      options?.height || 100,
+      // 用 ?? 而不是 ||：允许把信息区高度显式设为 0（不要标题区时）
+      options?.height ?? 100,
       options?.padding,
     );
     this.el = SvgUtils.createG({

@@ -263,9 +263,10 @@ describe('SNTransition.Guitar 吉他相关方法测试', () => {
         fret: 3,
       },
     );
+    // C#4：低把位优先 → A 弦 4 品（旧实现按弦顺序取到低音 E 弦 9 品，不便弹）
     expect(SNTransition.Guitar.getSimpleNoteGuitarPosition('1', 0, 1)).toEqual({
-      string: 6,
-      fret: 9,
+      string: 5,
+      fret: 4,
     });
     expect(SNTransition.Guitar.getSimpleNoteGuitarPosition('0', 0, 0)).toEqual({
       string: null,

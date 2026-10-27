@@ -171,8 +171,10 @@ export class SNBeamLayer {
     if (group.length === 0 || underlineCount === 0) return;
     const first = group[0];
     const lineTop = first.parent!.y + SNConfig.score.chordHeight + 11;
-    const lineHeight = (SNConfig.score.lineHeight - 4) / 6;
-    const underlineBaseY = lineTop + lineHeight * 6 + 13;
+    const lineHeight =
+      (SNConfig.score.lineHeight - 4) / SNConfig.score.stringCount;
+    const underlineBaseY =
+      lineTop + lineHeight * SNConfig.score.stringCount + 13;
     const lineSpacing = 3;
 
     // 所有音符都画竖线，只有落单的八分/十六分音符竖线底部加标准小尾巴（斜线+左弧线）

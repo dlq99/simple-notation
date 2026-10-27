@@ -1,7 +1,32 @@
 import { SNNote, SNStave } from '@components';
 import { ChordTool, Logger, SvgUtils } from '@utils';
 import { SNConfig } from '@config';
-import { SNChordType } from '@types';
+import { SNChordType, SNInstrument } from '@types';
+import { UKULELE_CHORDS } from '@utils';
+
+/** 当前乐器是不是尤克里里（4 弦，查 4 弦指位表） */
+function isUkulele(): boolean {
+  const inst = SNConfig.score?.instrument;
+  if (inst === SNInstrument.UkuleleHighG || inst === SNInstrument.UkuleleLowG) {
+    return true;
+  }
+  // 旧配置兜底：乐器曾经挂在 chordType 上
+  const t = SNConfig.score?.chordType;
+  return t === SNChordType.UkuleleHighG || t === SNChordType.UkuleleLowG;
+}
+
+/** 和弦指位：尤克里里查 4 弦表；其余优先用配置覆盖表，其次内置吉他表。 */
+function chordPositionsOf(symbol: string): (number | null)[] | undefined {
+  if (isUkulele()) {
+    return (
+      SNConfig.score?.chordPositions?.[symbol] ?? UKULELE_CHORDS[symbol] ?? undefined
+    );
+  }
+  return (
+    SNConfig.score?.chordPositions?.[symbol] ??
+    ChordTool.guitarChordPositionsMap[symbol]
+  );
+}
 
 export class SNChordLayer {
   /** SVG group 元素，作为内容的容器 */
@@ -39,8 +64,9 @@ export class SNChordLayer {
     // 遍历chord数组，绘制已知符号（和弦、分段符、换气符等）
     let drawnElementCount = 0; // 记录绘制的元素数量，用于调整位置
     const baseX = note.x + note.width / 2;
+    // 和弦区高度由配置决定（解析器在有和弦且没配置时会按显示方式补一个默认值）
     // 调整基线位置，使其更靠近音符上方
-    const baseY = note.y - (SNConfig.score.chordHeight ?? 13) / 2 + 5;
+    const baseY = note.y - (SNConfig.score.chordHeight ?? 0) / 2 + 5;
 
     // 检查是否含有分段符，如果含有则调整和弦的垂直位置
     const hasSectionRepeat = note.chord.some((symbol) =>
@@ -108,22 +134,24 @@ export class SNChordLayer {
             sectionRepeatGroup.appendChild(lPath);
 
             elementToDraw = sectionRepeatGroup;
-          } else if (ChordTool.guitarChordPositionsMap[symbol]) {
-            // 绘制和弦符号
-            // 和弦符号位置相对于当前音符中心
+          } else {
+            // 和弦符号
+            // 注意：以前这里要求「能在指位表里查到」才画，导致表外和弦（Bb、Cmaj9…）
+            // 连文字都不显示；现在文字模式一律画，指位图模式查不到才退化成文字。
             const chordX = baseX;
             const chordY = baseY + verticalOffset; // 应用垂直偏移
 
-            if (chordType === 'guitar') {
-              // 查找和弦指位（吉他指位图）
-              const positions =
-                ChordTool.guitarChordPositionsMap[symbol] ??
-                SNChordLayer.defaultChordPositions;
+            const positions =
+              chordType === SNChordType.Guitar
+                ? chordPositionsOf(symbol)
+                : undefined;
+
+            if (positions) {
               elementToDraw = SvgUtils.createGuitarChordDiagram(
                 symbol,
                 positions,
                 chordX - 20, // 微调位置
-                chordY - 32, // 微调位置
+                chordY - 40, // 微调位置（图高 66，往上多让一点，底边落在谱线之上）
               );
             } else {
               // 创建默认文本和弦

@@ -6,6 +6,7 @@ import {
   SNGraceNoteOptions,
   SNMultiNoteOptions,
   SNStaveType,
+  SNChordType,
 } from '@types';
 import { SNConfig, SNRuntime } from '@config';
 
@@ -64,7 +65,9 @@ export class TemplateParser extends BaseParser {
       SNConfig.score &&
       SNConfig.score.chordHeight === 0
     ) {
-      SNConfig.score.chordHeight = 13;
+      // 指位图是 56px 高的块，只留 13px 会被顶出画布；文字一个小条就够
+      SNConfig.score.chordHeight =
+        SNConfig.score.chordType === SNChordType.Guitar ? 60 : 13;
     }
     // #endregion
 

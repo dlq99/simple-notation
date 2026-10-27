@@ -8,6 +8,7 @@ import {
   SNNoteOptions,
   SNStaveOptions,
   SNStaveType,
+  SNChordType,
 } from '@types';
 import { SNConfig } from '@config';
 
@@ -163,7 +164,8 @@ export class AbcParser extends BaseParser {
       SNConfig.score &&
       SNConfig.score.chordHeight === 0
     ) {
-      SNConfig.score.chordHeight = 10;
+      SNConfig.score.chordHeight =
+        SNConfig.score.chordType === SNChordType.Guitar ? 60 : 10;
     }
 
     const graceNoteRegex = /<([^>]+)>/g;

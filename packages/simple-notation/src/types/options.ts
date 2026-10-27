@@ -64,17 +64,46 @@ export interface SNScoreOptions {
   scoreType: SNScoreType;
   showChordLine: boolean;
   chordLineHeight: number;
+  /** 弦数（吉他 6 / 尤克里里 4）。一般不直接给，由 {@link SNScoreOptions.instrument} 推导。 */
+  stringCount: number;
+  /** 各弦空弦 MIDI，按「弦 N → 弦 1」排序（吉他 [40,45,50,55,59,64]）。由 instrument 推导。 */
+  tuningMidi: number[];
+  /**
+   * 记谱八度偏移。吉他谱按惯例记高一个八度（实际发音低八度），故为 -12；
+   * 尤克里里按实音记谱，为 0。由 instrument 推导。
+   */
+  notationOctaveOffset: number;
+  /** 乐器：决定弦数、定弦、记谱八度，以及和弦指位用哪张表。 */
+  instrument: SNInstrument;
+  /**
+   * 覆盖内置和弦指位表（按「弦 N → 弦 1」，null = 闷弦）。
+   * 用于非吉他乐器，例如尤克里里 4 弦。
+   */
+  chordPositions?: Record<string, (number | null)[]>;
 }
 
 export enum SNChordType {
   Default = 'default',
   Guitar = 'guitar',
+  /** 尤克里里 High G（弦 4 = G4），指位图 4 弦 */
+  UkuleleHighG = 'ukulele-high-g',
+  /** 尤克里里 Low G（弦 4 = G3），指位图 4 弦 */
+  UkuleleLowG = 'ukulele-low-g',
 }
 
 export enum SNScoreType {
   Simple = 'simple',
   Guitar = 'guitar',
   SimpleGuirar = 'simple-guitar',
+}
+
+/**
+ * 乐器。和弦图弦数、指板谱弦数、定弦、记谱八度都由它决定。
+ */
+export enum SNInstrument {
+  Guitar = 'guitar',
+  UkuleleHighG = 'ukulele-high-g',
+  UkuleleLowG = 'ukulele-low-g',
 }
 
 /**

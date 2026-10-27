@@ -1,5 +1,17 @@
 import { GuitarPosition, SNMultiNoteOptions } from '@types';
 import { ChordTool } from '@utils';
+import { SNConfig } from '@config';
+
+/** 未初始化 SNConfig 时的兜底（吉他标准调弦），保证纯函数单测可直接调用。 */
+const DEFAULT_TUNING = {
+  stringCount: 6,
+  tuningMidi: [40, 45, 50, 55, 59, 64],
+  notationOctaveOffset: -12,
+};
+
+function scoreCfg() {
+  return SNConfig.score ?? DEFAULT_TUNING;
+}
 
 /**
  * 乐谱和乐器之间转换的工具类
@@ -308,11 +320,12 @@ export class SNTransition {
       maxFret: number = 17,
     ): GuitarPosition[] {
       const positions: GuitarPosition[] = [];
-      for (let string = 6; string >= 1; string--) {
-        const openMidi = SNTransition.guitarTuningMidiMap[string];
+      const count = scoreCfg().stringCount;
+      for (let s = 0; s < count; s++) {
+        const openMidi = scoreCfg().tuningMidi[s];
         const fret = midi - openMidi;
         if (fret >= 0 && fret <= maxFret) {
-          positions.push({ string, fret });
+          positions.push({ string: count - s, fret });
         }
       }
       return positions;
@@ -336,9 +349,10 @@ export class SNTransition {
       const preferredPositions: GuitarPosition[] = [];
       const preferredFretStart = transposeValue;
       const preferredFretEnd = transposeValue + preferredFretRange;
+      const count = scoreCfg().stringCount;
 
-      for (let string = 6; string >= 1; string--) {
-        const openMidi = SNTransition.guitarTuningMidiMap[string];
+      for (let s = 0; s < count; s++) {
+        const openMidi = scoreCfg().tuningMidi[s];
         const fret = midi - openMidi;
 
         if (
@@ -347,7 +361,7 @@ export class SNTransition {
           fret >= 0 &&
           fret <= maxFret
         ) {
-          preferredPositions.push({ string, fret });
+          preferredPositions.push({ string: count - s, fret });
         }
       }
       return preferredPositions;
@@ -421,44 +435,37 @@ export class SNTransition {
       // Calculate target MIDI note based on octave and accidental
       const targetMidi = baseMidi + octaveCount * 12 + upDownCount;
 
-      // According to guitar notation convention (sounding an octave lower), subtract 12 from the target MIDI value
-      const actualSoundingMidi = targetMidi - 12;
+      // 记谱八度偏移：吉他为 -12（记高一个八度），尤克里里为 0（按实音记谱）
+      const actualSoundingMidi =
+        targetMidi + scoreCfg().notationOctaveOffset;
 
-      // Define MIDI notes for standard guitar tuning (E2 A2 D3 G3 B3 E4)
-      const guitarTuningMidisArray: number[] = [40, 45, 50, 55, 59, 64]; // MIDI values for strings 6-1
+      // 空弦 MIDI（按「弦 N → 弦 1」），由配置决定：吉他 6 弦 / 尤克里里 4 弦
+      const tuningMidisArray: number[] = scoreCfg().tuningMidi;
+      const stringCount = scoreCfg().stringCount;
 
-      // First, try to find the position within the preferred fret range
-      for (let s = 0; s < guitarTuningMidisArray.length; s++) {
-        const openStringMidi = guitarTuningMidisArray[s];
-        for (let f = 0; f <= preferredMaxFret && f <= maxFret; f++) {
-          const fretMidi = openStringMidi + f;
-          if (fretMidi === actualSoundingMidi) {
-            // Found note position in the preferred range
-            const string = 6 - s; // Guitar string numbers are typically 1-6 from thin to thick
-            const fret = f;
-            // Return the first preferred position found (prioritizing lower strings, then lower frets)
-            return { string, fret };
+      // 枚举整个指板上的所有可弹位置，再挑「品最低」的那个。
+      // 原来的实现是「按弦顺序找第一个」，尤克里里 low G 上会把一个音摆到 14/16 品，
+      // 而其实同一个音在低把位就有。品低优先也更接近手写谱习惯。
+      const candidates: { string: number; fret: number }[] = [];
+      for (let s = 0; s < tuningMidisArray.length; s++) {
+        const openStringMidi = tuningMidisArray[s];
+        for (let f = 0; f <= maxFret; f++) {
+          if (openStringMidi + f === actualSoundingMidi) {
+            candidates.push({ string: stringCount - s, fret: f });
           }
         }
       }
 
-      // If not found in the preferred range, search within the entire fretboard range
-      for (let s = 0; s < guitarTuningMidisArray.length; s++) {
-        const openStringMidi = guitarTuningMidisArray[s];
-        for (let f = preferredMaxFret + 1; f <= maxFret; f++) {
-          const fretMidi = openStringMidi + f;
-          if (fretMidi === actualSoundingMidi) {
-            // Found note position in the entire fretboard range
-            const string = 6 - s;
-            const fret = f;
-            // Return the first non-preferred position found
-            return { string, fret };
-          }
-        }
+      if (!candidates.length) {
+        // If no note position is found within the maximum fret range
+        return { string: null, fret: null };
       }
 
-      // If no note position is found within the maximum fret range
-      return { string: null, fret: null };
+      // 优先低把位；同样品低时取更细（编号更小）的弦，旋律更亮
+      const preferred = candidates.filter((c) => c.fret <= preferredMaxFret);
+      const pool = preferred.length ? preferred : candidates;
+      pool.sort((a, b) => a.fret - b.fret || a.string - b.string);
+      return pool[0];
     },
   };
 }

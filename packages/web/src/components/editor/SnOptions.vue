@@ -50,28 +50,23 @@
       <div class="options-section p-[15px]">
         <h3 class="mt-0 mb-[15px] text-[#555] text-lg">乐谱</h3>
         <div class="options-grid grid grid-cols-2 gap-4 gap-x-6">
-          <!-- 和弦显示类型 -->
+          <!-- 乐器：决定弦数 / 定弦 / 记谱八度 / 和弦指位表 -->
           <div class="input-group flex flex-col gap-2">
-            <!--
-            * @description 和弦显示类型选择
-            -->
-            <label for="chord-type-input" class="font-medium text-[#333] whitespace-nowrap"
-              >和弦显示类型</label
+            <label for="instrument-input" class="font-medium text-[#333] whitespace-nowrap"
+              >乐器</label
             >
             <select
-              id="chord-type-input"
-              v-model="editorStore.snOptions.score!.chordType"
+              id="instrument-input"
+              v-model="editorStore.snOptions.score!.instrument"
               class="flex-1 p-2 px-3 border border-[#ddd] rounded text-sm bg-white bg-opacity-80"
             >
-              <option :value="SNChordType.Default">默认</option>
-              <option :value="SNChordType.Guitar">吉他</option>
+              <option :value="SNInstrument.Guitar">吉他（6 弦 EADGBE）</option>
+              <option :value="SNInstrument.UkuleleHighG">尤克里里 · High G</option>
+              <option :value="SNInstrument.UkuleleLowG">尤克里里 · Low G</option>
             </select>
           </div>
           <!-- 乐谱显示类型 -->
           <div class="input-group flex flex-col gap-2">
-            <!--
-            * @description 乐谱显示类型选择
-            -->
             <label for="score-type-input" class="font-medium text-[#333] whitespace-nowrap"
               >乐谱显示类型</label
             >
@@ -81,10 +76,25 @@
               class="flex-1 p-2 px-3 border border-[#ddd] rounded text-sm bg-white bg-opacity-80"
             >
               <option :value="SNScoreType.Simple">简谱</option>
-              <option :value="SNScoreType.Guitar">吉他谱</option>
-              <!-- <option :value="SNScoreType.SimpleGuirar">简谱+吉他谱</option> -->
+              <option :value="SNScoreType.Guitar">四线谱 / 六线谱</option>
             </select>
           </div>
+          <!-- 和弦显示 -->
+          <div class="input-group flex flex-col gap-2">
+            <label for="chord-type-input" class="font-medium text-[#333] whitespace-nowrap"
+              >和弦显示</label
+            >
+            <select
+              id="chord-type-input"
+              v-model="editorStore.snOptions.score!.chordType"
+              class="flex-1 p-2 px-3 border border-[#ddd] rounded text-sm bg-white bg-opacity-80"
+            >
+              <option :value="SNChordType.Default">文字（C / Am）</option>
+              <option :value="SNChordType.Guitar">指位图</option>
+            </select>
+          </div>
+        </div>
+        <div class="options-grid grid grid-cols-2 gap-4 gap-x-6 mt-4">
           <!-- 行高 -->
           <div class="input-group flex flex-col gap-2">
             <!--
@@ -238,7 +248,7 @@
 
 <script setup lang="ts">
 import { useEditorStore } from '../../stores';
-import { SNScoreType, SNChordType } from 'simple-notation';
+import { SNScoreType, SNChordType, SNInstrument } from 'simple-notation';
 
 defineProps<{
   activePanel: string;

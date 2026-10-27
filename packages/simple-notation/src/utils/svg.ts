@@ -184,17 +184,21 @@ export class SvgUtils {
     x: number = 0,
     y: number = 0,
   ) {
-    positions = positions.slice().reverse();
+    // 保持传入顺序：左 → 右 = 数组 0 → n。
+    // 吉他是「6 弦 → 1 弦」（低音 E 在左），尤克里里是「G → C → E → A」（G 在左），
+    // 两者都符合各自的谱面习惯，所以不做 reverse。
     const group = SvgUtils.createG({ tag: 'guitar-chord-diagram' });
-    const width = 36; // 总宽度
-    const height = 56; // 总高度
+    const width = 40; // 总宽度
+    const height = 66; // 总高度
     const fretCount = 4; // 品数
-    const stringCount = 6; // 弦数
-    const marginTop = 18; // 和弦名到指板距离
+    const stringCount = positions.length; // 弦数由指位数据决定：吉他 6 / 尤克里里 4
+    const marginTop = 26; // 和弦名 + 空弦/闷弦标记的净空（不能让圆圈碰到琴枕）
     const marginBottom = 8;
     const fretSpacing = (height - marginTop - marginBottom) / fretCount;
     const stringSpacing = width / (stringCount - 1);
-    const dotRadius = 2;
+    const dotRadius = 2.4;
+    /** 空弦/闷弦标记离琴枕的净空 */
+    const markerLift = 5; // 只要不碰到琴枕即可
 
     // 1. 和弦名
     const nameText = SvgUtils.createText({
@@ -217,11 +221,11 @@ export class SvgUtils {
         x2: x + width,
         y2: y + marginTop + i * fretSpacing,
         stroke: 'black',
-        strokeWidth: i === 0 ? 2 : 1, // 顶部为琴枕
+        strokeWidth: i === 0 ? 2.4 : 1, // 顶部为琴枕（粗），品线细
       });
       group.appendChild(line);
     }
-    // 竖线
+    // 竖线（弦）：比品线更细，空弦/按点的圆圈才醒目
     for (let i = 0; i < stringCount; i++) {
       const line = SvgUtils.createLine({
         x1: x + i * stringSpacing,
@@ -229,19 +233,44 @@ export class SvgUtils {
         x2: x + i * stringSpacing,
         y2: y + marginTop + fretCount * fretSpacing,
         stroke: 'black',
-        strokeWidth: 1,
+        strokeWidth: 0.8,
       });
       group.appendChild(line);
     }
 
-    // 3. 按弦点/空弦标记
+    // 3. 按弦点 / 空弦标记 / 闷弦标记
     for (let i = 0; i < stringCount; i++) {
       const pos = positions[i];
-      if (pos === null) continue; // 不画
       const cx = x + i * stringSpacing;
+      if (pos === null || typeof pos === 'undefined' || pos < 0) {
+        // 闷弦：小叉，抬到琴枕上方
+        const cy = y + marginTop - markerLift;
+        const arm = 2.6;
+        group.appendChild(
+          SvgUtils.createLine({
+            x1: cx - arm,
+            y1: cy - arm,
+            x2: cx + arm,
+            y2: cy + arm,
+            stroke: 'black',
+            strokeWidth: 0.6,
+          }),
+        );
+        group.appendChild(
+          SvgUtils.createLine({
+            x1: cx - arm,
+            y1: cy + arm,
+            x2: cx + arm,
+            y2: cy - arm,
+            stroke: 'black',
+            strokeWidth: 0.6,
+          }),
+        );
+        continue;
+      }
       if (pos === 0) {
-        // 空弦，画白心黑边圆，在线上方
-        const cy = y + marginTop - fretSpacing / 2;
+        // 空弦：白心细边圆，抬到琴枕上方，别碰琴枕
+        const cy = y + marginTop - markerLift;
         const circle = document.createElementNS(
           'http://www.w3.org/2000/svg',
           'circle',
@@ -251,7 +280,7 @@ export class SvgUtils {
         circle.setAttribute('r', `${dotRadius}`);
         circle.setAttribute('fill', 'white');
         circle.setAttribute('stroke', 'black');
-        circle.setAttribute('stroke-width', '1.5');
+        circle.setAttribute('stroke-width', '0.6');
         group.appendChild(circle);
       } else if (typeof pos === 'number' && pos > 0) {
         // 按弦，画黑心黑边圆，位置在对应品格线上
@@ -264,8 +293,7 @@ export class SvgUtils {
         circle.setAttribute('cy', `${cy}`);
         circle.setAttribute('r', `${dotRadius}`);
         circle.setAttribute('fill', 'black');
-        circle.setAttribute('stroke', 'black');
-        circle.setAttribute('stroke-width', '1');
+        circle.setAttribute('stroke', 'none');
         group.appendChild(circle);
       }
     }

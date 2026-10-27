@@ -1,6 +1,12 @@
 import { SNBox } from '@core';
 import { SNContent } from './content';
-import { SNBoxType, SNScoreOptions, SNStaveOptions, SNStaveType } from '@types';
+import {
+  SNBoxType,
+  SNScoreOptions,
+  SNScoreType,
+  SNStaveOptions,
+  SNStaveType,
+} from '@types';
 import { Logger, SvgUtils } from '@utils';
 import { SNConfig } from '@config';
 import { SNStave } from './stave';
@@ -85,6 +91,14 @@ export class SNScore extends SNBox {
     let totalY = this.innerY;
     const pageSize = 870;
     let currentPageSize = 0;
+    // 多行歌词（[1.x][2.y]）每多一行要多留 15px，否则会压到下一行的和弦区
+    const lyricLines = (SNRuntime.splitLyrics ?? []).reduce<number>(
+      (max, word) => Math.max(max, Array.isArray(word) ? word.length : 1),
+      1,
+    );
+    const lyricBand = SNRuntime.lyric
+      ? SNConfig.score.lyricHeight + (lyricLines - 1) * 15
+      : 0;
     this.staveOptions.forEach((option, idx) => {
       if (option.type !== SNStaveType.DefaultLine) return;
       option.index = idx + 1;
@@ -97,7 +111,7 @@ export class SNScore extends SNBox {
         SNConfig.score.lineHeight +
         (SNConfig.score.showChordLine ? SNConfig.score.chordLineHeight : 0) +
         SNConfig.score.lineSpace +
-        (SNRuntime.lyric ? SNConfig.score.lyricHeight : 0);
+        lyricBand;
       // 分页处理, totalY对A4高度取余
       if (totalY % pageSize >= currentPageSize) {
         currentPageSize = totalY % pageSize;
@@ -118,7 +132,15 @@ export class SNScore extends SNBox {
         this.el.appendChild(breakLine);
       }
     });
-    this.setHeight(totalY - this.innerY + SNConfig.score.lineSpace);
+    // 指板谱的歌词被推得更低（要让开符杠），这里把画布高度补上，
+    // 否则歌词会落到 SVG 视口外被裁掉
+    const tabLyricExtra =
+      SNRuntime.lyric && SNConfig.score.scoreType !== SNScoreType.Simple
+        ? 22
+        : 0;
+    this.setHeight(
+      totalY - this.innerY + SNConfig.score.lineSpace + tabLyricExtra,
+    );
     SNBeamLayer.draw(this.staves.flatMap((stave) => stave.measures));
     this.drawBorderBox(SNBoxType.SCORE, SNConfig.debug.borderbox?.score);
   }

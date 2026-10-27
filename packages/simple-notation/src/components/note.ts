@@ -598,10 +598,11 @@ export class SNNote extends SNBox {
   drawGuitarNote() {
     const baseX = this.innerX + this.innerWidth / 2;
     let lineTop = this.parent!.y + SNConfig.score.chordHeight + 11;
-    let lineHeight = (SNConfig.score.lineHeight - 4) / 6;
+    let lineHeight =
+      (SNConfig.score.lineHeight - 4) / SNConfig.score.stringCount;
 
-    // 绘制吉他六线谱的六条线
-    for (let i = 0; i < 6; i++) {
+    // 绘制指板谱的弦线（弦数可配置：吉他 6 / 尤克里里 4）
+    for (let i = 0; i < SNConfig.score.stringCount; i++) {
       const y = lineTop + lineHeight * i;
       const line = SvgUtils.createLine({
         x1: this.innerX,
@@ -627,7 +628,8 @@ export class SNNote extends SNBox {
     // 只有找到品位信息时才绘制品位数字和竖线
     if (string !== null && fret !== null) {
       const lineIndex = string - 1;
-      const textY = lineTop + lineHeight * lineIndex + lineHeight / 2; // 根据弦号计算基础 Y 坐标并进行微调
+      // 数字骑在弦线上（不是浮在两条线中间）：线被数字底下的白色描边挡住
+      const textY = lineTop + lineHeight * lineIndex;
 
       const text = SvgUtils.createText({
         x: baseX, // 使用计算出的水平中心位置
@@ -639,6 +641,7 @@ export class SNNote extends SNBox {
         strokeWidth: 2,
         stroke: 'white',
       });
+      text.setAttribute('dominant-baseline', 'middle');
       text.style.paintOrder = 'stroke';
       this.el.appendChild(text);
 
@@ -660,7 +663,10 @@ export class SNNote extends SNBox {
           this.el.appendChild(
             SvgUtils.createText({
               x: baseX,
-              y: lineTop + lineHeight * 3 + lineHeight / 3,
+              y:
+                lineTop +
+                lineHeight * (SNConfig.score.stringCount / 2) +
+                lineHeight / 3,
               text: '-',
               fontSize: 18,
               fontFamily:
@@ -706,10 +712,11 @@ export class SNNote extends SNBox {
 
     if (SNConfig.score.showChordLine) {
       lineTop += SNConfig.score.lyricHeight + SNConfig.score.chordLineHeight;
-      lineHeight = (SNConfig.score.chordLineHeight - 4) / 6;
+      lineHeight =
+        (SNConfig.score.chordLineHeight - 4) / SNConfig.score.stringCount;
 
-      // 绘制吉他六线谱的六条线
-      for (let i = 0; i < 6; i++) {
+      // 绘制指板谱的弦线（弦数可配置）
+      for (let i = 0; i < SNConfig.score.stringCount; i++) {
         const y = lineTop + lineHeight * i;
         const line = SvgUtils.createLine({
           x1: this.innerX,
@@ -757,7 +764,7 @@ export class SNNote extends SNBox {
       this.el.appendChild(
         BravuraMusicSymbols.createSymbol(restSymbolKey, {
           x: x, // 水平居中
-          y: lineTop + lineHeight * 3, // 垂直位置，大约在六线谱中间位置
+          y: lineTop + lineHeight * (SNConfig.score.stringCount / 2), // 垂直位置，谱线中间
           fontSize: 24, // 适当放大
           fontFamily: 'Bravura', // 使用Bravura字体
           textAnchor: 'middle', // 水平居中对齐
@@ -800,7 +807,8 @@ export class SNNote extends SNBox {
         const baseY =
           this.innerY +
           SNConfig.score.lineHeight +
-          (SNConfig.score.scoreType === SNScoreType.Simple ? 18 : 38);
+          // 指板谱的符杠/尾巴垂在谱线下方，歌词要再让开一点，否则会压在一起
+          (SNConfig.score.scoreType === SNScoreType.Simple ? 18 : 42);
         if (typeof word === 'string') {
           if (word === '-') return;
           const text = SvgUtils.createText({

@@ -187,6 +187,9 @@ describe('SNScore', () => {
       scoreType: 'Simple' as SNScoreType,
       showChordLine: true,
       chordLineHeight: 10,
+      stringCount: 6,
+      tuningMidi: [40, 45, 50, 55, 59, 64],
+      notationOctaveOffset: -12,
     };
   });
 
