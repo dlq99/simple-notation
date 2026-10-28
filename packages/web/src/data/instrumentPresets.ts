@@ -22,7 +22,8 @@ export interface InstrumentPreset {
 
 const TAB_LAYOUT: Partial<SNScoreOptions> = {
   lineHeight: 66,
-  chordHeight: 60,
+  // 和弦指位图高 66（含空弦/闷弦标记），chordHeight 给足才不会压到上一行歌词
+  chordHeight: 72,
 };
 
 export const PRESETS: InstrumentPreset[] = [

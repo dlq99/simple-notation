@@ -82,9 +82,16 @@ export interface SNScoreOptions {
   chordPositions?: Record<string, (number | null)[]>;
   /**
    * 扫弦记号：`d` 下扫 / `u` 上扫，按拍循环，例如 `dduu`。
-   * 留空则不画箭头。
+   * 留空则不画箭头。**与 `pattern` 等价，`pattern` 优先**。
    */
   strum?: string;
+  /**
+   * 节奏型（弹唱谱用）：每拍一格，见 `SNRhythmLayer`。
+   * 例：`4 3 2 1`（分解和弦）/ `d d u u`（扫弦）/ `4 3 2 1 | d d u u`。
+   */
+  pattern?: string;
+  /** 每小节拍数（节奏记号的拍位基准）。不填则读 `M:`，再退回 4。 */
+  beatsPerBar: number;
 }
 
 export enum SNChordType {

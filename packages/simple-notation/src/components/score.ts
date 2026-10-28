@@ -15,7 +15,7 @@ import {
   SNBeamLayer,
   SNChordLayer,
   SNPointerLayer,
-  SNStrumLayer,
+  SNRhythmLayer,
   SNTieLineLayer,
 } from '@layers';
 
@@ -143,7 +143,7 @@ export class SNScore extends SNBox {
       totalY - this.innerY + SNConfig.score.lineSpace + tabLyricExtra,
     );
     SNBeamLayer.draw(this.staves.flatMap((stave) => stave.measures));
-    SNStrumLayer.draw(
+    SNRhythmLayer.draw(
       this.staves.flatMap((stave) => stave.measures),
       this.el,
     );

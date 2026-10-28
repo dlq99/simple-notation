@@ -615,7 +615,9 @@ export class SNNote extends SNBox {
       this.el.appendChild(line);
     }
 
-    if (this.note === '0') {
+    // 弹唱谱（有节奏型）里这一行是"节奏格"，不画休止符号，否则和参考谱对不上
+    const hasRhythm = !!(SNConfig.score.pattern || SNConfig.score.strum);
+    if (this.note === '0' && !hasRhythm) {
       this.drawGuitarRestNote(lineTop, lineHeight);
     }
 

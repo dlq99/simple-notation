@@ -82,6 +82,7 @@ function defaultScore(): SNScoreOptions {
     tuningMidi: GUITAR_TUNING,
     notationOctaveOffset: -12,
     instrument: SNInstrument.Guitar,
+    beatsPerBar: 4,
   };
 }
 

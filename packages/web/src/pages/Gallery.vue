@@ -11,19 +11,35 @@
 
     <div class="flex flex-col gap-3">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm text-[#666] w-[68px]">谱面</span>
+        <span class="text-sm text-[#666] w-[68px]">乐器</span>
         <button
-          v-for="p in visiblePresets"
-          :key="p.id"
+          v-for="i in INSTS"
+          :key="i.id"
           class="px-3 py-1.5 rounded border text-sm transition"
           :class="
-            p.id === presetId
+            i.id === instId
               ? 'bg-[#333] text-white border-[#333]'
               : 'bg-white text-[#555] border-[#ddd] hover:bg-[#f5f5f5]'
           "
-          @click="presetId = p.id"
+          @click="instId = i.id"
         >
-          {{ p.label }}
+          {{ i.label }}
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm text-[#666] w-[68px]">谱面</span>
+        <button
+          v-for="t in TYPES"
+          :key="t.id"
+          class="px-3 py-1.5 rounded border text-sm transition"
+          :class="
+            t.id === typeId
+              ? 'bg-[#333] text-white border-[#333]'
+              : 'bg-white text-[#555] border-[#ddd] hover:bg-[#f5f5f5]'
+          "
+          @click="typeId = t.id"
+        >
+          {{ t.label }}
         </button>
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -45,7 +61,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-sm text-[#666] w-[68px]">和弦</span>
         <button
-          v-for="c in [{ id: 'guitar', label: '指位图' }, { id: 'default', label: '文字' }]"
+          v-for="c in [{ id: 'guitar', label: '指位图' }, { id: 'default', label: '文字' }, { id: 'none', label: '无' }]"
           :key="c.id"
           class="px-3 py-1.5 rounded border text-sm transition"
           :class="
@@ -53,7 +69,7 @@
               ? 'bg-[#333] text-white border-[#333]'
               : 'bg-white text-[#555] border-[#ddd] hover:bg-[#f5f5f5]'
           "
-          @click="chordMode = c.id as 'guitar' | 'default'"
+          @click="pickChord(c.id as 'guitar' | 'default' | 'none')"
         >
           {{ c.label }}
         </button>
@@ -68,6 +84,45 @@
         >
           {{ playing ? '♪ 扫弦中…' : '▶ 扫弦试听' }}
         </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm text-[#666] w-[68px]">歌词</span>
+        <button
+          v-for="l in [{ id: true, label: '显示' }, { id: false, label: '不显示' }]"
+          :key="String(l.id)"
+          class="px-3 py-1.5 rounded border text-sm transition"
+          :class="
+            l.id === showLyric
+              ? 'bg-[#333] text-white border-[#333]'
+              : 'bg-white text-[#555] border-[#ddd] hover:bg-[#f5f5f5]'
+          "
+          @click="showLyric = l.id"
+        >
+          {{ l.label }}
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm text-[#666] w-[68px]">节奏</span>
+        <button
+          v-for="r in RHYTHMS"
+          :key="r.id"
+          class="px-3 py-1.5 rounded border text-sm transition"
+          :disabled="songMelody"
+          :title="songMelody ? '这份谱有旋律（品位数字），右手记号会和数字抢同一行，已禁用' : ''"
+          :class="
+            songMelody
+              ? 'bg-[#f7f7f7] text-[#bbb] border-[#eee] cursor-not-allowed'
+              : r.id === patternMode
+                ? 'bg-[#333] text-white border-[#333]'
+                : 'bg-white text-[#555] border-[#ddd] hover:bg-[#f5f5f5]'
+          "
+          @click="patternMode = r.id"
+        >
+          {{ r.label }}
+        </button>
+        <span v-if="songMelody" class="text-xs text-[#a07]">
+          这份谱带旋律，节奏记号不可用（换「弹唱」类曲目试试）
+        </span>
       </div>
       <p class="text-xs text-[#888]">{{ activePreset.detail }} · {{ activeSong.hint }}</p>
     </div>
@@ -165,6 +220,22 @@ const SONGS: Song[] = [
     url: '/score/template/【Simple-Notation】曾经的你.json',
   },
   {
+    // 弹唱谱（和弦 + 节奏记号）：只有和弦与歌词，人声旋律不画
+    id: 'arpeggio',
+    label: '弹唱（分解示范）',
+    hint: 'C–G–Am–Em，只有和弦与右手记号，没有旋律',
+    strum: 'r 3 2 3',
+    data: {
+      info: { title: '' },
+      score:
+        '{C}0,0,0,0|{G}0,0,0,0|{Am}0,0,0,0|{Em}0,0,0,0\n' +
+        '{F}0,0,0,0|{C}0,0,0,0|{G}0,0,0,0|{C}0,0,0,0',
+      lyric:
+        '一 闪 一 闪 亮 晶 晶 满 天 都 是 小 星 星 呀 呀\n' +
+        '挂 在 天 空 放 光 明 好 像 千 颗 小 眼 睛 呀 呀',
+    },
+  },
+  {
     // 真实尤克编配：来自 mjrainwater/ukulele_chorpro 的 ChordPro 歌本
     // （0003 - Amazing Grace.onsong，key G / 3-4 / tempo 60）
     // 弹唱谱只画和弦与扫弦，人声旋律不画；`0` 是"这一拍不弹旋律"的休止。
@@ -199,14 +270,55 @@ let sn: SimpleNotation | null = null;
 const initialPreset = route.query.preset as PresetId | undefined;
 const initialSong = route.query.song as string | undefined;
 
-const presetId = ref<PresetId>(
-  initialPreset && PRESETS.some((p) => p.id === initialPreset)
-    ? initialPreset
-    : 'uke-high-g',
+/** 乐器：决定弦数、定弦、以及和弦指位图用哪张表。不指定时只能显示简谱 */
+const INSTS = [
+  { id: 'none', label: '不指定' },
+  { id: 'guitar', label: '吉他（6 弦）' },
+  { id: 'ukulele-high-g', label: '尤克 · High G' },
+  { id: 'ukulele-low-g', label: '尤克 · Low G' },
+] as const;
+type InstId = (typeof INSTS)[number]['id'];
+
+/** 谱面：简谱 / 指板谱（几线由乐器定） */
+const TYPES = [
+  { id: 'simple', label: '简谱' },
+  { id: 'guitar', label: '指板谱' },
+] as const;
+type TypeId = (typeof TYPES)[number]['id'];
+
+const instId = ref<InstId>((route.query.inst as InstId) ?? 'ukulele-high-g');
+const typeId = ref<TypeId>(
+  (route.query.type as TypeId) ?? (initialPreset === 'simple' ? 'simple' : 'guitar'),
 );
-const chordMode = ref<'guitar' | 'default'>(
-  route.query.chords === 'text' ? 'default' : 'guitar',
+
+/** 布局参数仍然借预设（简谱一行矮、指板谱一行高），乐器/谱面各自独立 */
+const presetId = computed(() => {
+  if (typeId.value === 'simple') return 'simple' as PresetId;
+  if (instId.value === 'guitar' || instId.value === 'none') return 'guitar' as PresetId;
+  return instId.value as PresetId;
+});
+const chordMode = ref<'guitar' | 'default' | 'none'>(
+  route.query.chords === 'text'
+    ? 'default'
+    : route.query.chords === 'none'
+      ? 'none'
+      : 'guitar',
 );
+/** 歌词显示开关 */
+const showLyric = ref(route.query.lyric !== 'off');
+/** 当前曲目里有没有和弦标记（没有就不留和弦区，免得顶出一块空白） */
+const songHasChord = ref(true);
+
+/** 节奏记号：'' = 跟曲目；其余是手动指定的型 */
+const RHYTHMS = [
+  { id: '', label: '无' },
+  { id: 'd d u u', label: '扫弦 ↓↓↑↑' },
+  { id: 'r 3 2 3', label: '分解（根音）' },
+  { id: 'd+u d+u | r 3 2 3', label: '混合（八分扫 / 分解）' },
+] as const;
+const patternMode = ref<string>((route.query.rhythm as string) ?? '');
+/** 当前曲目里有没有真实旋律（有 → 右手记号与品位数字互斥，必须禁用） */
+const songMelody = ref(false);
 const songId = ref<string>(
   initialSong && SONGS.some((s) => s.id === initialSong) ? initialSong : 'star',
 );
@@ -218,7 +330,16 @@ const activeSong = computed(
 );
 const activeHeight = computed(() => CANVAS_HEIGHT[presetId.value]);
 
+/** 选「指位图」必须知道乐器：没指定就自动挑一个（尤克 High G） */
+function pickChord(mode: 'guitar' | 'default' | 'none') {
+  if (mode === 'guitar' && instId.value === 'none') instId.value = 'ukulele-high-g';
+  chordMode.value = mode;
+}
+
 function options(): SNOptions {
+  const noInst = instId.value === 'none';
+  const noChord = chordMode.value === 'none';
+  const diagram = chordMode.value === 'guitar' && !noInst && songHasChord.value;
   return {
     // 不用 clientWidth：布局还没稳定时量到的是错的值，SVG 尺寸会锁死在错的宽度上
     width: CANVAS_WIDTH,
@@ -229,8 +350,32 @@ function options(): SNOptions {
     content: { padding: 8, infoShow: false },
     score: {
       ...activePreset.value.score,
-      chordType: chordMode.value,
-      strum: activeSong.value.strum,
+      // 「不指定乐器」就整条不传，让库自己用默认值；显式传 undefined 会把默认值打掉
+      ...(noInst
+        ? {}
+        : {
+            instrument:
+              instId.value === 'guitar'
+                ? SNInstrument.Guitar
+                : instId.value === 'ukulele-high-g'
+                  ? SNInstrument.UkuleleHighG
+                  : SNInstrument.UkuleleLowG,
+          }),
+      scoreType:
+        typeId.value === 'simple' ? SNScoreType.Simple : SNScoreType.Guitar,
+      chordType: noChord || noInst ? 'default' : chordMode.value,
+      // 不显示歌词就把歌词带压掉，行距也更紧凑
+      ...(showLyric.value ? {} : { lyricHeight: 0, lineSpace: 12 }),
+      // 指位图高 66，简谱只给 12 撑不住；不给指位图就别覆盖（undefined 会打掉默认值）
+      ...(diagram ? { chordHeight: 72 } : {}),
+      // 指板谱 + 指位图 + 歌词：和弦图要占 66px，行距给足，否则压到上一行歌词
+      ...(diagram && typeId.value === 'guitar' ? { lineSpace: 34 } : {}),
+      // 节奏记号：手动选了就用选中的，否则跟曲目自带的 pattern/strum
+      pattern: songMelody.value ? undefined : patternMode.value || undefined,
+      strum:
+        songMelody.value || patternMode.value
+          ? undefined
+          : activeSong.value.strum,
     },
   } as SNOptions;
 }
@@ -279,10 +424,26 @@ async function mount() {
   if (!container.value) return;
   const data = await loadSongData(activeSong.value);
   if (!container.value) return;
+  // 旋律与右手记号互斥：有品位数字就不给画节奏记号
+  const melody = /[1-7]/.test(data.score ?? '');
+  songMelody.value = melody;
+  songHasChord.value = /\{[^}]+\}/.test(data.score ?? '');
+  if (melody) patternMode.value = '';
+
+  // 「和弦=无」= 把谱面里的 {C} 标记整段去掉；歌词开关同理，直接置空
+  const payload = {
+    ...data,
+    score:
+      chordMode.value === 'none'
+        ? (data.score ?? '').replace(/\{[^}]*\}/g, '')
+        : data.score,
+    lyric: showLyric.value ? (data.lyric ?? '') : '',
+  };
+
   sn?.destroy();
   container.value.innerHTML = '';
   sn = new SimpleNotation(container.value, options());
-  sn.loadData(data, SNDataType.TEMPLATE);
+  sn.loadData(payload, SNDataType.TEMPLATE);
   syncCanvasHeight();
 }
 
@@ -299,14 +460,26 @@ onMounted(async () => {
   await mount();
 });
 
-watch(presetId, async () => {
+watch([instId, typeId], async () => {
   await mount();
-  router.replace({ query: { ...route.query, preset: presetId.value } });
+  router.replace({
+    query: { ...route.query, inst: instId.value, type: typeId.value, preset: undefined },
+  });
 });
 
 watch(chordMode, () => {
   mount();
-  router.replace({ query: { ...route.query, chords: chordMode.value === 'default' ? 'text' : 'diagram' } });
+  router.replace({ query: { ...route.query, chords: chordMode.value === 'default' ? 'text' : chordMode.value === 'none' ? 'none' : 'diagram' } });
+});
+
+watch(showLyric, () => {
+  mount();
+  router.replace({ query: { ...route.query, lyric: showLyric.value ? undefined : 'off' } });
+});
+
+watch(patternMode, () => {
+  mount();
+  router.replace({ query: { ...route.query, rhythm: patternMode.value || undefined } });
 });
 
 watch(songId, async () => {
