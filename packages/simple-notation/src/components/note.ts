@@ -786,6 +786,29 @@ export class SNNote extends SNBox {
       case SNScoreType.Guitar:
         this.drawGuitarNote();
         break;
+      case SNScoreType.SimpleGuirar:
+        // 简谱 + 指板谱同屏：上半行画简谱，下半行画指板谱。
+        // 两个绘制方法都按 lineHeight / innerY 定位，这里临时把行高对半分、把基准线下推，
+        // 画完立刻还原——只影响当前这个音符的绘制窗口。
+        {
+          const fullLine = SNConfig.score.lineHeight;
+          const simpleH = Math.round(fullLine * 0.35);
+          const tabH = fullLine - simpleH;
+          const parent = this.parent!;
+          const baseParentY = parent.y;
+
+          SNConfig.score.lineHeight = simpleH;
+          this.drawSimpleNote();
+
+          // 指板谱的基准线取自「小节」的 y（parent.y），不是音符自己的 innerY
+          SNConfig.score.lineHeight = tabH;
+          parent.y = baseParentY + simpleH;
+          this.drawGuitarNote();
+
+          parent.y = baseParentY;
+          SNConfig.score.lineHeight = fullLine;
+        }
+        break;
       default:
         this.drawSimpleNote();
         break;

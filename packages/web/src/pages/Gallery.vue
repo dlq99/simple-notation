@@ -135,8 +135,9 @@
     </div>
 
     <p class="text-xs text-[#999] leading-relaxed">
-      注：「简谱 + 四线谱」同屏（<code class="px-1 rounded bg-[#eee]">SNScoreType.SimpleGuirar</code>）
-      上游还没做完——第二行只出数字、不出谱线，所以暂未放进上面的选项。
+      注：「简谱 + 指板谱」同屏（<code class="px-1 rounded bg-[#eee]">SNScoreType.SimpleGuirar</code>）
+      已修好：上半行简谱、下半行指板谱（含谱线与品位数字）。已知不足：小节线只画到指板谱那一行，
+      没有贯到简谱行。
     </p>
   </div>
 </template>
@@ -283,6 +284,7 @@ type InstId = (typeof INSTS)[number]['id'];
 const TYPES = [
   { id: 'simple', label: '简谱' },
   { id: 'guitar', label: '指板谱' },
+  { id: 'simple-guitar', label: '简谱+指板谱' },
 ] as const;
 type TypeId = (typeof TYPES)[number]['id'];
 
@@ -362,7 +364,13 @@ function options(): SNOptions {
                   : SNInstrument.UkuleleLowG,
           }),
       scoreType:
-        typeId.value === 'simple' ? SNScoreType.Simple : SNScoreType.Guitar,
+        typeId.value === 'simple'
+          ? SNScoreType.Simple
+          : typeId.value === 'simple-guitar'
+            ? SNScoreType.SimpleGuirar
+            : SNScoreType.Guitar,
+      // 三合一要放两行（简谱行 + 四线谱行）
+      ...(typeId.value === 'simple-guitar' ? { lineHeight: 110 } : {}),
       chordType: noChord || noInst ? 'default' : chordMode.value,
       // 不显示歌词就把歌词带压掉，行距也更紧凑
       ...(showLyric.value ? {} : { lyricHeight: 0, lineSpace: 12 }),
